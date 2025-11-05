@@ -4,8 +4,12 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include "Controller.h"
 
 int solver(std::shared_ptr<backend_interface::Tester> tester, bool preempt) {
+  Controller controller;
+  controller.setQueueAvailability(preempt);
+
   // Short example you can remove it
   std::cout << (preempt ? "Preempt" : "Queue") << '\n';
   auto motor1 = tester->get_motor_1();
