@@ -25,7 +25,7 @@ class Controller {
     std::int32_t previousError_vertical;
     std::int32_t sumOfErrors_vertical;
     /* Functions */
-    std::int8_t calculateMove(std::uint16_t error);
+    std::int8_t calculateMove(std::uint16_t error, std::uint16_t sumerror, std::uint16_t preverror);
     std::int8_t componentP(std::uint16_t error);
     std::int8_t componentI(std::uint16_t error);
     std::int8_t componentD(std::uint16_t error);

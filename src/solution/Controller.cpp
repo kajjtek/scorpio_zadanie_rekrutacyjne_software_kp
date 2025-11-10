@@ -1,6 +1,7 @@
 #include "Controller.h"
 #include <cmath>
 #include <limits>
+#include <iostream>
 
 std::pair<std::uint16_t, std::uint16_t> Controller::translatePointToAngle(Point point){
     return {translatePointToHorizontalAngle(point), translatePointToVerticalAngle(point)};
@@ -20,6 +21,7 @@ std::uint16_t Controller::translatePointToVerticalAngle(Point point){
         int vertical_angle_enc = std::round((vertical_angle_rad+(M_PI)/2)/M_PI*4096);
         int normalised_vertical_angle_enc = ((vertical_angle_enc % 4096)+4096)%4096; //tutaj zakladam ze camera vertykalnie porusza sie do max 180 stopni
         std::uint16_t enc_vertical = static_cast<std::uint16_t>(normalised_vertical_angle_enc);
+        return enc_vertical;
 }
 
 void Controller::handleNewTarget(Point target){
@@ -65,7 +67,9 @@ std::int8_t Controller::handleMotorHorizontal(std::uint16_t current_position){
         return 0;
     }
 
-    std::int8_t move = calculateMove(error);
+    std::int8_t move = calculateMove(error, this->sumOfErrors_horizontal, this->previousError_horizontal);
+    this->previousError_horizontal=error;
+    this->sumOfErrors_horizontal+=error;
 
     return move;
 }
@@ -84,17 +88,31 @@ std::int8_t Controller::handleMotorVertical(std::uint16_t current_position){
         return 0;
     }
 
-    std::int8_t move = calculateMove(error);
+    std::int8_t move = calculateMove(error, this->sumOfErrors_vertical, this->previousError_vertical);
+    this->previousError_vertical=error;
+    this->sumOfErrors_vertical+=error;
 
     return move;
 }
 
-std::int8_t Controller::calculateMove(std::uint16_t error){
-    const double p_constant = 1;
-    const double i_constant = 1;
-    const double d_constant = 1;
-    int result = std::round(p_constant * componentP(error) + i_constant * componentI(error) + d_constant * componentD(error));
+std::int8_t Controller::calculateMove(std::uint16_t error, std::uint16_t sumerror, std::uint16_t preverror){
+    const double p_constant = 10;
+    const double i_constant = 0;
+    const double d_constant = 0;
+    int result = std::round(p_constant * componentP(error) + i_constant * componentI(sumerror) + d_constant * componentD(preverror));
     if(result>127) return 127;
     if(result<-127) return -127;
     return static_cast<std::int8_t>(result);
+}
+
+std::int8_t Controller::componentP(std::uint16_t error){
+    return error;
+}
+
+std::int8_t Controller::componentI(std::uint16_t sum_error){
+    return sum_error;
+}
+
+std::int8_t Controller::componentD(std::uint16_t prev_error){
+    return prev_error;
 }

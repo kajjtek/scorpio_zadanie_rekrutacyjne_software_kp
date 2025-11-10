@@ -7,26 +7,30 @@
 #include "Controller.h"
 
 int solver(std::shared_ptr<backend_interface::Tester> tester, bool preempt) {
-  Controller controller;
-  controller.setQueueAvailability(preempt);
 
+  auto controller = std::make_shared<Controller>();
+  controller->setQueueAvailability(preempt);
   // Short example you can remove it
   std::cout << (preempt ? "Preempt" : "Queue") << '\n';
   auto motor1 = tester->get_motor_1();
   auto motor2 = tester->get_motor_2();
   auto commands = tester->get_commands();
-  motor1->add_data_callback([](const uint16_t& data) {
-    std::cout << "Motor 1 data: " << static_cast<int>(data) << "\n";
+  motor1->add_data_callback([controller, motor1](const uint16_t& data) {
+    std::cout<< "Motor1 new: " << data << std::endl;
+    std::int8_t signal = controller->handleMotorHorizontal(data);
+    motor1->send_data(signal);
   });
-  motor2->add_data_callback([](const uint16_t& data) {
-    std::cout << "Motor 2 data: " << static_cast<int>(data) << "\n";
+  motor2->add_data_callback([controller, motor2](const uint16_t& data) {
+    std::cout<< "Motor2 new : " << data << std::endl;
+    std::int8_t signal = controller->handleMotorVertical(data);
+    motor2->send_data(signal);
   });
-  commands->add_data_callback([](const Point& point) {
-    std::cout << "Command point: (" << point.x << ", " << point.y << ", " << point.z << ")\n";
+  commands->add_data_callback([controller](const Point& point) {
+    std::cout << "New target: " << point.x << ", " << point.y << ", " << point.z << std::endl;
+    controller->handleNewTarget(point);
   });
-  motor1->send_data(100);
-  motor2->send_data(-50);
-  std::this_thread::sleep_for(std::chrono::milliseconds(250));
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(25000));
   //
   return 0;
 }
